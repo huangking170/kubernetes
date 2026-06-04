@@ -1,0 +1,69 @@
+# ========================================
+# Docker Compose - 一键启动所有服务
+# ========================================
+# 启动方式: docker-compose up -d
+# 停止方式: docker-compose down
+# 访问地址: http://localhost
+#
+# 先执行 init_db.sql 初始化数据库
+# ========================================
+
+version: "3.8"
+
+services:
+  # ---------- 认证服务 ----------
+  auth_service:
+    build: ./auth_service
+    container_name: auth_service
+    ports:
+      - "5001:5001"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+  # ---------- 商品服务 ----------
+  product_service:
+    build: ./product_service
+    container_name: product_service
+    ports:
+      - "5002:5002"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+  # ---------- 订单服务 ----------
+  order_service:
+    build: ./order_service
+    container_name: order_service
+    ports:
+      - "5003:5003"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+  # ---------- Nginx 反向代理 ----------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    ports:
+      - "80:80"          # 前端页面 + API 反向代理
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - auth_service
+      - product_service
+      - order_service
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+networks:
+  ecommerce_net:
+    driver: bridge

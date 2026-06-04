@@ -1,0 +1,49 @@
+{{- $fullName := .Release.Name -}}
+{{- $pullSecrets := .Values.imagePullSecrets -}}
+
+{{- range $name, $svc := .Values.microservices }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullName }}-{{ $name }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: {{ $fullName }}-{{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $fullName }}-{{ $name }}
+    spec:
+      imagePullSecrets: {{- toYaml $pullSecrets | nindent 8 }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $.Values.global.imageRegistry }}/{{ $svc.image }}:{{ $svc.tag }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ $svc.port }}
+          env:
+            - name: DB_HOST
+              value: "{{ $fullName }}-db"
+            - name: DB_PORT
+              value: "{{ $.Values.database.port }}"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "{{ $.Values.database.rootPassword }}"
+            - name: DB_NAME
+              value: "{{ $.Values.database.dbName }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullName }}-{{ $name }}
+spec:
+  selector:
+    app: {{ $fullName }}-{{ $name }}
+  ports:
+    - port: 80
+      targetPort: {{ $svc.port }}
+{{- end }}

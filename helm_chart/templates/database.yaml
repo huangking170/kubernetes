@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-db-init
+data:
+  init_db.sql: |
+{{ .Files.Get "files/init_db.sql" | indent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-db
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-db
+    spec:
+      containers:
+        - name: mysql
+          image: {{ .Values.database.image }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.database.rootPassword }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.database.dbName }}
+          ports:
+            - containerPort: {{ .Values.database.port }}
+          volumeMounts:
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-sql
+          configMap:
+            name: {{ .Release.Name }}-db-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-db
+spec:
+  selector:
+    app: {{ .Release.Name }}-db
+  ports:
+    - port: {{ .Values.database.port }}
+      targetPort: {{ .Values.database.port }}

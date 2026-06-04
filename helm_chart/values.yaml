@@ -1,0 +1,40 @@
+# 全局镜像拉取密钥 (部署前需在集群创建: kubectl create secret docker-registry ghcr-secret ...)
+imagePullSecrets:
+  - name: ghcr-secret
+
+global:
+  imageRegistry: ghcr.io/huangking170/kubernetes
+  imagePullPolicy: Always
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: nginx
+    tag: "alpine"
+  service:
+    port: 80
+
+microservices:
+  auth:
+    image: auth_service
+    tag: "latest"
+    port: 5001
+  product:
+    image: product_service
+    tag: "latest"
+    port: 5002
+  order:
+    image: order_service
+    tag: "latest"
+    port: 5003
+
+database:
+  image: mysql:8.0
+  rootPassword: "123456"
+  dbName: "ecommerce"
+  port: 3306
+
+ingress:
+  enabled: true
+  className: nginx
+  host: shop.local

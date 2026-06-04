@@ -6,6 +6,7 @@ API:
   - GET /api/health : 健康检查
 """
 
+import os
 import jwt
 import pymysql
 from flask import Flask, jsonify, request
@@ -16,14 +17,15 @@ app = Flask(__name__)
 JWT_SECRET = "mysecretkey"
 
 DB_CONFIG = {
-    "host": "192.168.10.240",
-    "port": 3306,
-    "user": "root",
-    "password": "123456",
-    "database": "ecommerce",
+    "host": os.environ.get("DB_HOST", "localhost"), # 找不到环境变量时，默认连本地 localhost
+    "port": int(os.environ.get("DB_PORT", 3306)),
+    "user": os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("DB_PASSWORD", "123456"),
+    "database": os.environ.get("DB_NAME", "ecommerce"),
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,
 }
+
 
 
 # ======================== 数据库工具 ========================
